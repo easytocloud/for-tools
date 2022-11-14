@@ -69,3 +69,28 @@ AWS_SESSION_TOKEN
 ```
 AWS_PROFILE doesn't change throughout the sequence. 
 Should you issue a script, use `aws sts get-caller-identity` to find the current 'profile'.
+
+## Role 
+By default for-org_accts will assume the role:
+
+> OrganizationAccountAccessRole
+
+This can be overruled in different ways. 
+Setting AWS_FORROLE as an environment variable overrules the default.
+
+> export AWS_FORROLE=MyCrossAccountRole
+
+This in turn can be overruled for users of [aws-profile-organizer](https://github.com/easytocloud/aws-profile-organizer) by putting a file named `orgaccessrole` with just the name of the role to assume in `~/.aws/aws-envs/<your environment>/`. This allows for different standard for-roles for different AWS environments.
+
+> echo "myTrainingRole" > ~/.aws/aws-envs/training/orgaccessrole
+
+Finally, --role can be used to overrule all the above.
+
+The order is
+
+```
+OrganizationAccountAccessRole
+export AWS_FORROLE=MyCrossAccountRole
+orgaccessrole
+--role
+```
