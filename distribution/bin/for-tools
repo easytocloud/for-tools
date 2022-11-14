@@ -1,0 +1,286 @@
+#! /usr/bin/env zsh
+
+# wrapper 
+
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+__debug=false
+_roleindex=1
+
+# --- setawsvars
+#
+#     [Interactively] set AccessKey, SecretKey and SessionToken
+#  
+#
+setawsvars()
+{
+    if [ $? != 0 ]
+    then
+        return 1
+    fi
+    
+    if [ $# = 0 ]
+    then
+	    echo -n "please enter AK: " && read AWS_ACCESS_KEY_ID
+	    echo -n "please enter SK: " && read AWS_SECRET_ACCESS_KEY
+    else
+	    AWS_ACCESS_KEY_ID=${1}
+        AWS_SECRET_ACCESS_KEY=${2}
+    fi
+
+    # Make sure to make _ID empty when length is 0
+
+    ! test -n "${AWS_ACCESS_KEY_ID}" && unset AWS_ACCESS_KEY_ID && export AWS_ACCESS_KEY_ID
+
+    case ${AWS_ACCESS_KEY_ID} in
+    AK*)    AWS_SESSION_TOKEN=""
+            ;;
+    A*)      if [ $# -lt 3 ]
+            then
+                echo -n "please enter Session Token: " && read AWS_SESSION_TOKEN
+            else
+                AWS_SESSION_TOKEN=${3}
+            fi
+            ;;
+    esac
+}
+
+# --- pushrole
+#
+#       push current role 
+#           assume role passed in $1
+#           optional $2 is used as external-id
+#
+pushrole()
+{
+     _wishrole=${1}
+     _external=""
+    
+    [[  -z "${2}" ]] || _external="--external-id ${2}"
+    
+    _debug "pushrole: about to assume ${_wishrole} ${_external}"
+    
+    O_AKID[${_roleindex}]=${AWS_ACCESS_KEY_ID}
+      O_SK[${_roleindex}]=${AWS_SECRET_ACCESS_KEY}
+     O_TOK[${_roleindex}]=${AWS_SESSION_TOKEN}
+    
+     aws sts assume-role --role-arn $_wishrole ${_external} --role-session pushed_role \
+        --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text 2>/dev/null  | read AK SK TK
+       
+    if [ $? != 0 ]
+    then
+        _error "pushrole: assume-role failed"
+        return 1
+    else
+		let _roleindex+=1
+		setawsvars $AK $SK $TK
+        _debug "pushed"
+    fi
+    return 0
+}
+
+# --- poprole
+#
+#       pop previously pushed role
+#       *return* (not exit) when stack is empty
+#
+poprole()
+{
+    let _roleindex-=1
+    
+    if (( _roleindex<1 )) 
+    then
+        _error "Stack empty"
+        _roleindex=1
+        return
+    fi
+    
+    setawsvars "${O_AKID[${_roleindex}]}" "${O_SK[${_roleindex}]}" "${O_TOK[${_roleindex}]}"
+  
+    _debug "poprole: popped, index = $_roleindex"
+}
+
+
+# --- list_tools
+#
+#       all for-* are link to for-tools 
+#		DO NOT USE for-tools directly
+#
+_list_tools()
+{
+	echo "DO NOT USE for-tools"
+	echo "Other commands are linked to this common file, use the other commands"
+	exit 2
+}
+
+# --- list_iamusers
+#
+#       list IAM users from ~/.aws/credentials
+#
+#
+_list_iamusers()
+{
+	prof=""
+	ak=""
+	sk=""
+
+	while read line 
+	do
+	   #echo ... $line
+
+	   # in config search for all 3 relevant lines in one profile 'block' defining a role
+
+	   case $line in
+	   \[*\]) # new block - reset finding
+		  ak=""
+		  sk=""
+		  prof=$(echo ${line} |  sed 's/profile //' | tr -d '[] '  )
+		  ;;
+	   aws_access_key_id*) 
+		  ak="found"
+		  ;;
+	   aws_secret_access_key*) 
+		  sk="found"
+		  ;;
+	   esac
+
+	   # when all 3 lines are found, output the name of the profile
+
+	   if ! test -z "${ak}" && ! test -z "${sk}" 
+	   then
+		echo ${prof}
+		prof=""
+		ak=""
+		sk=""
+	   fi
+
+	done < ~/.aws/credentials
+}
+
+# --- list_iamroles
+#
+#       List roles from ~/.aws/config that can be assumed by current profile
+#
+_list_iamroles()
+{
+	prof=""
+	role=""
+	src=""
+
+	while read line 
+	do
+	   # echo ... $line
+
+	   # in config search for all 3 relevant lines in one profile 'block' defining a role
+
+	   case $line in
+	   \[*profile*\]) # new block - reset finding
+		  role=""
+		  src=""
+		  prof=$(echo ${line} |  sed 's/profile//' | tr -d '[] '  )
+		  ;;
+	   *source_profile*) 
+		  src=$( echo ${line} | cut -d = -f2- | tr -d ' ' )
+		  ;;
+	   *role_arn*) 
+		  role=$( echo ${line} | cut -d = -f2 - | tr -d ' ')
+		  ;;
+	   esac
+
+	   # when all 3 lines are found, output the name of the profile
+
+	   if ! test -z "${role}" && ! test -z "${src}" 
+	   then
+	   	# only output names of roles that reference the current profile as source profile
+		if [ "${AWS_PROFILE}" = "${src}" ]
+		then
+			echo ${prof}
+		fi
+		prof=""
+		role=""
+		src=""
+	   fi
+
+	done < ~/.aws/config
+}
+
+# --- list_profiles
+#
+#       List all profiles locally defined
+#
+_list_profiles()
+{
+	aws configure list-profiles
+}
+# --- list_org_accts
+#
+#       List all account is current organization (works only from Orgs management account)
+#
+_list_org_accts()
+{
+	aws organizations list-accounts --query 'Accounts[].Id' --output text
+}
+
+### MAIN ###
+
+autoload -U  _error _log _die _debug
+
+tiep=${0##*for-}
+
+roleARG=""
+ouARG=""
+externalARG=""
+
+while [[ "${1}" == "--"* ]]
+do
+ 	case "${1}" in
+	--role) roleARG="${2}"
+		shift
+		shift
+		;;
+	--ou)   ouARG="${2}"
+		shift
+		shift
+		_die "OU filter not yet implemented"
+		;;
+	--external)
+		externalARG="${2}"
+		shift
+		shift
+		;;
+    *)	_die "Invalid option ${1}"
+	esac
+done
+
+CMD="${@}"
+
+ORG_PROFILE="${AWS_PROFILE}"
+
+for pr in $( _list_${tiep} )
+do
+        case ${tiep} in
+        *users | *roles | profiles)
+            export AWS_PROFILE="${pr}"
+			echo "# ${tiep%s} : ${pr} "
+			needtopop=false
+			runcmd=true
+            ;;
+		tools)
+			echo "DO NOT USE for-tools"
+			exit 2
+			;;
+        *)
+			if pushrole "arn:aws:iam::${pr}:role/${roleARG}" ${externalARG}
+			then
+				needtopop=true
+            	runcmd=true
+				echo "# pushedrole ${roleARG} in ${pr}"
+			else
+				needtopop=false
+				runcmd=false
+				echo "# pushedrole FAILED for ${roleARG} in ${pr} --> ${CMD} skipped"
+			fi
+		esac
+		${runcmd} && eval ${CMD}
+        AWS_PROFILE="${ORG_PROFILE}"
+		${needtopop} && poprole
+done
