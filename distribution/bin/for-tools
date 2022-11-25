@@ -153,7 +153,7 @@ _list_iamusers()
 		sk=""
 	   fi
 
-	done < ~/.aws/credentials
+	done < ${AWS_SHARED_CREDENTIALS_FILE:-~/.aws/credentials}
 }
 
 # --- list_iamroles
@@ -200,7 +200,7 @@ _list_iamroles()
 		src=""
 	   fi
 
-	done < ~/.aws/config
+	done < ${AWS_CONFIG_FILE:-~/.aws/config}
 }
 
 # --- list_profiles
@@ -235,8 +235,8 @@ then
 	# if easytocloud aws-profile-organizer is installed
 	if test -d ~/.aws/aws-envs
 	then
-		awsenv=$(readlink ~/.aws/config | rev | cut -f2 -d '/' | rev)
-		test -f ~/.aws/aws-envs/${awsenv}/orgaccessrole && roleARG=$(cat ~/.aws/aws-envs/${awsenv}/orgaccessrole)
+		_awsenv=$(awsenv --get)
+		test -f ~"/.aws/aws-envs/${_awsenv}/orgaccessrole" && roleARG=$(cat ~"/.aws/aws-envs/${_awsenv}/orgaccessrole")
 	fi
 	roleARG="${roleARG:-${AWS_FORROLE:-OrganizationAccountAccessRole}}"
 fi
@@ -289,6 +289,7 @@ do
 				runcmd=false
 				echo "# pushedrole FAILED for ${roleARG} in ${pr} --> command skipped"
 			fi
+			;;
 		esac
 		${runcmd} && eval ${CMD}
         AWS_PROFILE="${ORG_PROFILE}"

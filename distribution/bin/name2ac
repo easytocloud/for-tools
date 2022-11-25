@@ -1,0 +1,9 @@
+#! /usr/bin/env zsh
+if [[ "$#" -ne 1 ]]
+then
+    echo "Usage: $0 <awsAccountName>"
+    echo "Example: $0 ControlTowerAudit"
+    echo "Displays the AWS account ID associated with the given name."
+else
+    aws organizations list-accounts --query 'Accounts[?Name==`"'${1}'"`].Id' --output text
+fi
