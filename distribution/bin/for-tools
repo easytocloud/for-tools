@@ -6,6 +6,8 @@ export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 __debug=false
 _roleindex=1
 
+autoload awsenv
+
 # --- setawsvars
 #
 #     [Interactively] set AccessKey, SecretKey and SessionToken
