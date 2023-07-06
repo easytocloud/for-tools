@@ -35,6 +35,8 @@ jobs:
           # Optional - multiline string.
           depends_on: |
             "bash" => :build
+            "easytocloud/tap/zsh_functions" 
+
 
           # Custom install command for your formula.
           # Required - string.
