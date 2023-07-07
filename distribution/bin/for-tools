@@ -59,7 +59,7 @@ pushrole()
     
     [[  -z "${2}" ]] || _external="--external-id ${2}"
     
-    _debug "pushrole: about to assume ${_wishrole} ${_external}"
+    _ezdebug "pushrole: about to assume ${_wishrole} ${_external}"
     
     O_AKID[${_roleindex}]=${AWS_ACCESS_KEY_ID}
       O_SK[${_roleindex}]=${AWS_SECRET_ACCESS_KEY}
@@ -70,12 +70,12 @@ pushrole()
        
     if [ $? != 0 ]
     then
-        _error "pushrole: assume-role failed"
+        _ezerror "pushrole: assume-role failed"
         return 1
     else
 		let _roleindex+=1
 		setawsvars $AK $SK $TK
-        _debug "pushed"
+        _ezdebug "pushed"
     fi
     return 0
 }
@@ -91,14 +91,14 @@ poprole()
     
     if (( _roleindex<1 )) 
     then
-        _error "Stack empty"
+        _ezerror "Stack empty"
         _roleindex=1
         return
     fi
     
     setawsvars "${O_AKID[${_roleindex}]}" "${O_SK[${_roleindex}]}" "${O_TOK[${_roleindex}]}"
   
-    _debug "poprole: popped, index = $_roleindex"
+    _ezdebug "poprole: popped, index = $_roleindex"
 }
 
 
@@ -224,7 +224,7 @@ _list_org_accts()
 
 ### MAIN ###
 
-autoload -U  _error _log _die _debug
+autoload -U  _ezerror _ezlog _ezdie _ezdebug
 
 tiep=${0##*for-}
 
@@ -252,14 +252,14 @@ do
 	--ou)   ouARG="${2}"
 		shift
 		shift
-		_die "OU filter not yet implemented"
+		_ezdie "OU filter not yet implemented"
 		;;
 	--external)
 		externalARG="${2}"
 		shift
 		shift
 		;;
-    *)	_die "Invalid option ${1}"
+    *)	_ezdie "Invalid option ${1}"
 	esac
 done
 
