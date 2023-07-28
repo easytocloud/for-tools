@@ -10,6 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     name: homebrew-releaser
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure 1Password Service Account
+        uses: 1password/load-secrets-action/configure@v1
+        with:
+          # Persist the 1Password Service Account Authorization token
+          # for next steps.
+          # Keep in mind that every single step in the job is now
+          # able to access the token.
+          service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Load GitHub credentials
+        id: load-github-credentials
+        uses: 1password/load-secrets-action@v1
+        with:
+          export-env: false
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential 
+          ## to be used as ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
+
       - name: Release for-tools to easytocloud/homebrew-tap
         uses: Justintime50/homebrew-releaser@v1
         with:
@@ -24,7 +44,7 @@ jobs:
 
           # The GitHub Token (saved as a repo secret) that has `repo` permissions for the homebrew tap you want to release to.
           # Required - string.
-          github_token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          github_token: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN }}
 
           # Git author info used to commit to the homebrew tap.
           # Defaults are shown - strings.
