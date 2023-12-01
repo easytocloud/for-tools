@@ -219,7 +219,7 @@ _list_profiles()
 #
 _list_org_accts()
 {
-	aws organizations list-accounts --query 'Accounts[].Id' --output text
+	aws organizations list-accounts --query 'Accounts[?Status==`ACTIVE`].Id' --output text
 }
 
 ### MAIN ###
