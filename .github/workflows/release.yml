@@ -31,7 +31,7 @@ jobs:
           ## to be used as ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
 
       - name: Release for-tools to easytocloud/homebrew-tap
-        uses: Justintime50/homebrew-releaser@v1
+        uses: Justintime50/homebrew-releaser
         with:
           # The name of the homebrew tap to publish your formula to as it appears on GitHub.
           # Required - strings.
