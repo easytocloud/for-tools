@@ -5,5 +5,5 @@ then
     echo "Example: $0 ControlTowerAudit"
     echo "Displays the AWS account ID associated with the given name."
 else
-    aws organizations list-accounts --query 'Accounts[?Name==`"'${1}'"`].Id' --output text
+    aws organizations list-accounts --query 'Accounts[?Name==`"'${1}'"`].Id' --output text --profile ${ACNAME_PROFILE:-$AWS_PROFILE}
 fi

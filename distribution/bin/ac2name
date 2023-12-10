@@ -5,6 +5,6 @@ then
   echo "Example: $0 123456789012"
   echo "Displays the name of the AWS account associated with the given account ID."
 else
-  aws organizations list-accounts --query 'Accounts[?Id==`"'$1'"`].Name' --output text
+  aws organizations list-accounts --query 'Accounts[?Id==`"'$1'"`].Name' --output text --profile ${ACNAME_PROFILE:-$AWS_PROFILE}
 fi
 

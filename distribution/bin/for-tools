@@ -231,6 +231,8 @@ tiep=${0##*for-}
 roleARG=""
 ouARG=""
 externalARG=""
+verbose=false
+silent=false
 
 if [[ ${tiep} == "org_accts" ]]
 then
@@ -259,6 +261,19 @@ do
 		shift
 		shift
 		;;
+	--verbose)
+		verbose=true
+		shift
+		;;
+	--silent)
+		silent=true
+		shift
+		;;
+	--help)
+		echo "Usage: $0 [--role <rolename>] [--external <external-id>] [--verbose] <command>"
+		echo "       $0 --help"
+		exit 0
+		;;
     *)	_ezdie "Invalid option ${1}"
 	esac
 done
@@ -266,6 +281,7 @@ done
 CMD="${@}"
 
 ORG_PROFILE="${AWS_PROFILE}"
+export ACNAME_PROFILE="${AWS_PROFILE}"
 
 for pr in $( _list_${tiep} )
 do
@@ -285,7 +301,17 @@ do
 			then
 				needtopop=true
             	runcmd=true
-				echo "# pushedrole ${roleARG} in ${pr}"
+				if ${verbose}
+				then
+					echo "# pushedrole ${roleARG} in ${pr} $(ac2name ${pr})"
+				elif ${silent}
+				then
+					echo "# ${pr}"
+				else
+					echo "# pushedrole ${roleARG} in ${pr}"
+				fi
+			
+				
 			else
 				needtopop=false
 				runcmd=false
