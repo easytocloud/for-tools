@@ -25,7 +25,7 @@ jobs:
         id: load-github-credentials
         uses: 1password/load-secrets-action@v1
         with:
-          export-env: false
+          export-env: true
         env:
           HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential 
           ## to be used as ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
