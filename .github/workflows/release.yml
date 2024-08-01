@@ -2,15 +2,15 @@
 # Start Homebrew Releaser when a new tag is created
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - "main"
 
 jobs:
   homebrew-releaser:
     runs-on: ubuntu-latest
     name: homebrew-releaser
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Configure 1Password Service Account
         uses: 1password/load-secrets-action/configure@v1
@@ -29,6 +29,13 @@ jobs:
         env:
           HOMEBREW_TAP_GITHUB_TOKEN: op://CICD/github-easytocloud-brew/credential 
           ## to be used as ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
+
+
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GH_TOKEN: ${{ steps.load-github-credentials.outputs.HOMEBREW_TAP_GITHUB_TOKEN  }}
+
 
       - name: Release for-tools to easytocloud/homebrew-tap
         uses: Justintime50/homebrew-releaser@v1
