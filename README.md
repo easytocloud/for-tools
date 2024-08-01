@@ -1,4 +1,7 @@
+![release workflow](https://github.com/easytocloud/for-tools/actions/workflows/release.yml/badge.svg)
+
 # for-tools
+
 
 A set of tools for use with AWS CLI to iterate over multiple AWS accounts and run AWS CLI commands in each
 
